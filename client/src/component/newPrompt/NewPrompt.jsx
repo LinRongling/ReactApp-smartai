@@ -1,6 +1,6 @@
 import Upload from "../upload/upload";
 import "./newPrompt.css";
-import { useRef, useEffect, useState, map } from "react";
+import { useRef, useEffect, useState } from "react";
 import { IKImage } from "imagekitio-react";
 import model from "../../lib/gemini";
 import Markdown from "react-markdown";
@@ -79,35 +79,35 @@ const NewPrompt = ({ data }) => {
   const add = async (text, isInitial) => {
     if (!isInitial) setQuestion(text);
 
+    const message = Object.entries(img.aiData).length
+      ? [img.aiData, text]
+      : [text];
+
     try {
-      const result = await chat.sendMessageStream(
-        Object.entries(img.aiData).length ? [img.aiData, text] : [text]
-      );
+      const result = await chat.sendMessageStream(message);
       let accumulatedText = "";
       for await (const chunk of result.stream) {
         const chunkText = chunk.text();
-        console.log(chunkText);
         accumulatedText += chunkText;
         setAnswer(accumulatedText);
       }
 
       mutation.mutate();
     } catch (err) {
-      console.log(err);
+      console.error("Error:", err);
+      setAnswer("Sorry, an error occurred while processing your request.");
     }
   };
 
-  // IN PRODUCTION WE DON'T NEED IT
   const hasRun = useRef(false);
 
   useEffect(() => {
-    if (!hasRun.current) {
-      if (data?.history?.length === 1) {
-        add(data.history[0].parts[0].text, true);
-      }
+    if (!hasRun.current && data?.history?.length === 1) {
+      add(data.history[0].parts[0].text, true);
+      hasRun.current = true;
     }
-    hasRun.current = true;
-  }, []);
+  }, [data]);
+
   return (
     <>
       {img.isLoading && <div className="">Loading...</div>}

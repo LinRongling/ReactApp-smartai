@@ -11,6 +11,9 @@ import url, { fileURLToPath } from "url";
 const port = process.env.PORT || 3000;
 const app = express();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 app.use(
   cors({
     origin: process.env.CLIENT_URL,
@@ -158,6 +161,11 @@ app.put("/api/chats/:id", requireAuth(), async (req, res) => {
     console.log(err);
     res.status(500).send("Error adding conversation!");
   }
+});
+app.use(express.static(path.join(__dirname, "../client")));
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../client", "index.html"));
 });
 
 app.listen(port, () => {
